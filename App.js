@@ -9,6 +9,9 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import DatePicker from "react-datepicker";
 import {Picker} from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { RadioButton } from 'react-native-paper';
+// import ToggleButton from '@mui/material/ToggleButton';
+// import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 
 const Stack = createNativeStackNavigator();
@@ -46,7 +49,7 @@ export default function App() {
           component={CustomerBook}
           options = {headerStyle}
         />
-        {/*<Stack.Screen
+        <Stack.Screen
           name="customerHistory"
           component={CustomerHistory}
           options = {headerStyle}
@@ -65,7 +68,7 @@ export default function App() {
           name="invoice"
           component={Invoice}
           options = {headerStyle}
-        /> */}
+        />
       </Stack.Navigator>
     </NavigationContainer>
     </SafeAreaProvider>
@@ -108,7 +111,7 @@ const Login = ({navigation}) => {
       title = "Log In"
       buttonStyle={buttonStyle}
       onPress = {() => {
-        navigation.navigate('customer');
+        navigation.navigate('adminManage');
       }
       }
     />
@@ -229,7 +232,8 @@ const CustomerBook = ({navigation}) => {
         <Picker.Item label="Car" value="car" />
         <Picker.Item label="Motorcycle" value="motorcycle" />
       </Picker>
-      <Picker //car api to generate values here: https://github.com/Savage3D/car-makes-models-data
+      {/* car api to generate values here: https://github.com/Savage3D/car-makes-models-data */}
+      <Picker
         selectedValue={selectedVehMake}
         style={{ height: 50, width: '70%' }}
         onValueChange={(itemValue, itemIndex) =>
@@ -270,11 +274,156 @@ const CustomerBook = ({navigation}) => {
 }
 
 const CustomerHistory = ({navigation}) => {
-  <View> //one per booking
-    <Text>
-      Type: Date: etc.
-    </Text>
-  </View>
+  return(
+    // one per booking
+    <View> 
+      <Text>
+        Type: Date: etc.
+      </Text>
+    </View>
+  );
+  
+}
+
+const AdminManage = ({navigation}) => {
+  const [timeframe, setTimeframe] = React.useState('perday');
+  const [date, setDate] = useState(new Date(1598051730000));
+  const [mode, setMode] = useState('date');
+  const [show, setShow] = useState(false);
+
+  const onChange = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setShow(Platform.OS === 'ios');
+    setDate(currentDate);
+  };
+
+  const showMode = (currentMode) => {
+    setShow(true);
+    setMode(currentMode);
+  };
+
+  const showDatepicker = () => {
+    showMode('date');
+  };
+
+  const showTimepicker = () => {
+    showMode('time');
+  };
+
+  return(
+    <View> 
+      <RadioButton.Group onValueChange={newValue => setTimeframe(newValue)} value={timeframe}>
+        <View style={{flexDirection: 'row'}}>
+          <Text>Per Day</Text>
+          <RadioButton value="perday" />
+          <Text>Per Week</Text>
+          <RadioButton value="perweek" />
+        </View>
+      </RadioButton.Group>
+
+      <View>
+        <View>
+          <Button onPress={showDatepicker} title={"Select date:  " + date.getDate() + " / " + date.getMonth() + " / " + date.getFullYear()} />
+        </View>
+        {/* <View>
+          <Button onPress={showTimepicker} title={"Show time picker!"} />
+        </View> */}
+        {show && (
+          <DateTimePicker
+            testID="dateTimePicker"
+            value={date}
+            mode={mode}
+            is24Hour={true}
+            display="default"
+            onChange={onChange}
+          />
+          )}
+      </View>
+      <View style={{flexDirection: 'row'}}>
+        <View><Text> ID </Text></View>
+        <View><Text> Type </Text></View>
+        <View><Text> Mechanic </Text></View>
+      </View>
+      <Button
+      title = "Get Schedule"
+      buttonStyle={buttonStyle}
+      onPress = {() => {
+        navigation.navigate('invoice');
+      }
+      }
+      />
+    </View>
+  );
+
+}
+
+const ManageBooking = ({navigation}) => {
+  const [mechanic, setMechanic] = useState('0');
+  const [status, setStatus] = useState('0');
+  return(
+    <View style={styles.container}>
+      <Text> Mechanic: </Text>
+      <Picker
+        selectedValue={mechanic}
+        style={{ height: 50, width: '70%' , marginTop: 20}}
+        onValueChange={(itemValue, itemIndex) =>
+          setMechanic(itemValue)
+        }>
+        <Picker.Item label="Mechanic 1" value="m1" />
+        <Picker.Item label="Mechanic 2" value="m2" />
+        <Picker.Item label="Mechanic 3" value="m3" />
+        <Picker.Item label="Mechanic 4" value="m4" />
+      </Picker>
+      <Text> Fixed Cost: </Text>
+      {/* possibly cost disabled with the fixed cost */}
+      <Input
+      placeholder = "0"
+      type = 'number'
+      containerStyle = {inputStyle}
+      // onChangeText = {onChangeCost}
+      />
+      <Button
+      title = " + Add Part/Item "
+      buttonStyle={buttonStyle}
+      // onPress = {() => {
+      //   navigation.navigate('customerHistory');
+      // }
+      // }
+      />
+      <Text> Status: </Text>
+      <Picker
+        selectedValue={status}
+        style={{ height: 50, width: '70%'}}
+        onValueChange={(itemValue, itemIndex) =>
+          setStatus(itemValue)
+        }>
+        <Picker.Item label="Booked" value="m1" />
+        <Picker.Item label="In Service" value="m2" />
+        <Picker.Item label="Fixed/Completed" value="m3" />
+        <Picker.Item label="Collected" value="m4" />
+        <Picker.Item label="Scrapped/Unrepairable" value="m5" />
+      </Picker>
+      <Button
+      title = "Generate Invoice"
+      buttonStyle={buttonStyle}
+      onPress = {() => {
+        navigation.navigate('Login');
+      }
+      }
+      />
+    </View>
+    
+  )
+}
+
+const Invoice = ({navigation}) => {
+  return(
+    <View>
+      <Text>
+        Report here
+      </Text>
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({
