@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View} from 'react-native';
+import { StyleSheet, View,ScrollView} from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { Text,Input, Button, Overlay} from 'react-native-elements';
@@ -10,6 +10,7 @@ import DatePicker from "react-datepicker";
 import {Picker} from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { RadioButton } from 'react-native-paper';
+import axios from "axios";
 // import ToggleButton from '@mui/material/ToggleButton';
 // import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
@@ -111,7 +112,7 @@ const Login = ({navigation}) => {
       title = "Log In"
       buttonStyle={buttonStyle}
       onPress = {() => {
-        navigation.navigate('adminManage');
+        navigation.navigate('customerBook');
       }
       }
     />
@@ -147,6 +148,7 @@ const CustomerBook = ({navigation}) => {
   const [selectedService, setSelectedService] = useState('0');
   const [name, onChangeName] = useState('');
   const [phone, onChangePhone] = useState('');
+  const [comments, onChangeComments] = useState('');
   const [plate, onChangePlate] = useState('');
   const [selectedType, setSelectedType] = useState('0');
   const [selectedVehType, setSelectedVehType] = useState('0');
@@ -155,6 +157,25 @@ const CustomerBook = ({navigation}) => {
   const [date, setDate] = useState(new Date(1598051730000));
   const [mode, setMode] = useState('date');
   const [show, setShow] = useState(false);
+  const config = {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  };
+  const bookingJson = {carID:plate,comments:comments,date:date.getDate() + "/" + date.getMonth() + "/" + date.getFullYear(),mechanicID:"1",repairID:selectedService,status:"booked",userID:"testuser"}
+  const postBooking = async() => {
+    var response = false;
+    await axios.post('http://192.168.1.74:8080/book/savebooking',bookingJson,config)
+    .then(res => {
+      response = res.data;
+    })
+    .catch(err => err); 
+    if(response===true){
+      alert("good");
+    } else {
+      alert("sorry");
+    }
+  }
 
   const onChange = (event, selectedDate) => {
     const currentDate = selectedDate || date;
@@ -177,7 +198,7 @@ const CustomerBook = ({navigation}) => {
 
   //const [selectedDate, setDate] = useState(new Date());
   return (
-    <View style={styles.container}>
+    <ScrollView >
       <Text> Service Type: </Text>
       <Picker
         selectedValue={selectedService}
@@ -203,7 +224,8 @@ const CustomerBook = ({navigation}) => {
       containerStyle = {inputStyle}
       onChangeText = {onChangePhone}
       />
-      <View>
+      
+      
       <View>
         <Button onPress={showDatepicker} title={"Select date:  " + date.getDate() + " / " + date.getMonth() + " / " + date.getFullYear()} />
       </View>
@@ -220,7 +242,7 @@ const CustomerBook = ({navigation}) => {
           onChange={onChange}
         />
         )}
-      </View>
+      
       <Picker
         selectedValue={selectedVehType}
         style={{ height: 50, width: '70%' }}
@@ -260,15 +282,21 @@ const CustomerBook = ({navigation}) => {
       containerStyle = {inputStyle}
       onChangeText = {onChangePlate}
       />
+      <Input
+      placeholder = "Comments"
+      containerStyle = {inputStyle}
+      onChangeText = {onChangeComments}
+      />
       <Button
       title = "Book"
       buttonStyle={buttonStyle}
       onPress = {() => {
+        postBooking();
         navigation.navigate('customerHistory');
       }
       }
       />
-    </View>
+    </ScrollView>
     
   )
 }
@@ -348,7 +376,7 @@ const AdminManage = ({navigation}) => {
       title = "Get Schedule"
       buttonStyle={buttonStyle}
       onPress = {() => {
-        navigation.navigate('invoice');
+        navigation.navigate('manageBooking');
       }
       }
       />
