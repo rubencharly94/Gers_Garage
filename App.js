@@ -148,6 +148,7 @@ const CustomerBook = ({navigation}) => {
   const [selectedService, setSelectedService] = useState('0');
   const [name, onChangeName] = useState('');
   const [phone, onChangePhone] = useState('');
+  const [email, onChangeEmail] = useState('');
   const [comments, onChangeComments] = useState('');
   const [plate, onChangePlate] = useState('');
   const [selectedType, setSelectedType] = useState('0');
@@ -162,7 +163,18 @@ const CustomerBook = ({navigation}) => {
       'Content-Type': 'application/json'
     }
   };
-  const bookingJson = {carID:plate,comments:comments,date:date.getDate() + "/" + date.getMonth() + "/" + date.getFullYear(),mechanicID:"1",repairID:selectedService,status:"booked",userID:"testuser"}
+  const bookingJson = {
+    serviceType:"Repair",
+    name:"test3",
+    phone:"55555666",
+    email:"a@a.com",
+    date:"11/1/2022",
+    vehType:"minivan",
+    vehMake:"volvo",
+    vehFuel:"gas",
+    plate: "123456789",
+    comments:"commentarios"
+}
   const postBooking = async() => {
     var response = false;
     await axios.post('http://192.168.1.74:8080/book/savebooking',bookingJson,config)
@@ -206,10 +218,10 @@ const CustomerBook = ({navigation}) => {
         onValueChange={(itemValue, itemIndex) =>
           setSelectedService(itemValue)
         }>
-        <Picker.Item label="Annual Service" value="annual service" />
-        <Picker.Item label="Major Service" value="major service" />
-        <Picker.Item label="Repair" value="repair" />
-        <Picker.Item label="Major Repair" value="major repair" />
+        <Picker.Item label="Annual Service" value="AnnualService" />
+        <Picker.Item label="Major Service" value="MajorService" />
+        <Picker.Item label="Repair" value="Repair" />
+        <Picker.Item label="Major Repair" value="MajorRepair" />
       </Picker>
       {/* <DatePicker selected={selectedDate} onChange={(date) => setDate(date)} /> */}
       
@@ -223,6 +235,11 @@ const CustomerBook = ({navigation}) => {
       type = 'number'
       containerStyle = {inputStyle}
       onChangeText = {onChangePhone}
+      />
+      <Input
+      placeholder = "Email"
+      containerStyle = {inputStyle}
+      onChangeText = {onChangeEmail}
       />
       
       
@@ -249,10 +266,10 @@ const CustomerBook = ({navigation}) => {
         onValueChange={(itemValue, itemIndex) =>
           setSelectedVehType(itemValue)
         }>
-        <Picker.Item label="Minibus" value="minibus" />
-        <Picker.Item label="Van" value="van" />
-        <Picker.Item label="Car" value="car" />
-        <Picker.Item label="Motorcycle" value="motorcycle" />
+        <Picker.Item label="Minibus" value="Minibus" />
+        <Picker.Item label="Van" value="Van" />
+        <Picker.Item label="Car" value="Car" />
+        <Picker.Item label="Motorcycle" value="Motorcycle" />
       </Picker>
       {/* car api to generate values here: https://github.com/Savage3D/car-makes-models-data */}
       <Picker
