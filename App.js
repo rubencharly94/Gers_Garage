@@ -11,6 +11,7 @@ import {Picker} from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { RadioButton } from 'react-native-paper';
 import axios from "axios";
+import CalendarPicker from 'react-native-calendar-picker';
 // import ToggleButton from '@mui/material/ToggleButton';
 // import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
@@ -145,71 +146,98 @@ const Customer = ({navigation}) => {
 }
 
 const CustomerBook = ({navigation}) => {
-  const [selectedService, setSelectedService] = useState('0');
+  const [selectedService, setSelectedService] = useState('AnnualService');
   const [name, onChangeName] = useState('');
   const [phone, onChangePhone] = useState('');
   const [email, onChangeEmail] = useState('');
   const [comments, onChangeComments] = useState('');
   const [plate, onChangePlate] = useState('');
-  const [selectedType, setSelectedType] = useState('0');
-  const [selectedVehType, setSelectedVehType] = useState('0');
-  const [selectedVehMake, setSelectedVehMake] = useState('0');
+  const [vehFuel, setVehFuel] = useState('');
+  const [vehType, setVehType] = useState('');
+  const [vehMake, setVehMake] = useState('');
+  const [vehModel, setVehModel] = useState('');
+  const usertest='4';
+  useEffect(async()=>{
+    let user = await getUserInfo();
+    onChangeName(user.name);
+    onChangePhone(user.phone);
+    onChangeEmail(user.email);
+  },[]);
 
-  const [date, setDate] = useState(new Date(1598051730000));
-  const [mode, setMode] = useState('date');
-  const [show, setShow] = useState(false);
+  const [date, setDate] = useState(new Date());
+  // const [mode, setMode] = useState('date');
+  // const [show, setShow] = useState(false);
+  const url = 'http://192.168.1.74:8080/book';
   const config = {
     headers: {
       'Content-Type': 'application/json'
     }
   };
-  const bookingJson = {
-    serviceType:"Repair",
-    name:"test3",
-    phone:"55555666",
-    email:"a@a.com",
-    date:"11/1/2022",
-    vehType:"minivan",
-    vehMake:"volvo",
-    vehFuel:"gas",
-    plate: "123456789",
-    comments:"commentarios"
-}
+  const minDate = new Date();//calendar dates
+
+  
   const postBooking = async() => {
+    
+    const stringDate = date.toISOString().substring(0,10);
+    console.log(stringDate);
+    const bookingJson = {
+      serviceType:selectedService,
+      name:name,
+      phone:phone,
+      email:email,
+      date:stringDate,
+      vehType:vehType,
+      vehMake:vehMake,
+      vehModel:vehModel,
+      vehFuel:vehFuel,
+      plate: plate,
+      comments:comments
+    }
     var response = false;
-    await axios.post('http://192.168.1.74:8080/book/savebooking',bookingJson,config)
+    await axios.post(url+'/savebooking',bookingJson,config)
     .then(res => {
       response = res.data;
     })
     .catch(err => err); 
-    if(response===true){
-      alert("good");
+    if(response){
+      alert("booked");
     } else {
-      alert("sorry");
+      alert("Sorry, no slots available on the date selected")
     }
   }
 
-  const onChange = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShow(Platform.OS === 'ios');
-    setDate(currentDate);
-  };
+  // const onChange = (event, selectedDate) => {
+  //   const currentDate = selectedDate || date;
+  //   setShow(Platform.OS === 'ios');
+  //   setDate(currentDate);
+  // };
 
-  const showMode = (currentMode) => {
-    setShow(true);
-    setMode(currentMode);
-  };
+  // const showMode = (currentMode) => {
+  //   setShow(true);
+  //   setMode(currentMode);
+  // };
 
-  const showDatepicker = () => {
-    showMode('date');
-  };
+  // const showDatepicker = () => {
+  //   showMode('date');
+  // };
 
-  const showTimepicker = () => {
-    showMode('time');
-  };
+  // const showTimepicker = () => {
+  //   showMode('time');
+  // };
+
+  const getUserInfo = async() => {
+    var response;
+    await axios.get(url+'/getpastdetails/'+usertest)
+    .then(res=>{
+      response = res.data;
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    return response;
+  }
 
   //const [selectedDate, setDate] = useState(new Date());
   return (
+    
     <ScrollView >
       <Text> Service Type: </Text>
       <Picker
@@ -229,42 +257,49 @@ const CustomerBook = ({navigation}) => {
       placeholder = "Name"
       containerStyle = {inputStyle}
       onChangeText = {onChangeName}
+      value={name}
       />
       <Input
       placeholder = "Phone Number"
       type = 'number'
       containerStyle = {inputStyle}
       onChangeText = {onChangePhone}
+      value={phone}
       />
       <Input
       placeholder = "Email"
       containerStyle = {inputStyle}
       onChangeText = {onChangeEmail}
+      value={email}
       />
       
       
       <View>
-        <Button onPress={showDatepicker} title={"Select date:  " + date.getDate() + " / " + date.getMonth() + " / " + date.getFullYear()} />
+        <CalendarPicker
+          onDateChange={setDate}
+        />
+        {/* <Button onPress={showDatepicker} title={"Select date:  " + date.getDate() + " / " + date.getMonth() + " / " + date.getFullYear()} /> */}
       </View>
       {/* <View>
         <Button onPress={showTimepicker} title={"Show time picker!"} />
       </View> */}
-      {show && (
+      {/* {show && (
         <DateTimePicker
           testID="dateTimePicker"
           value={date}
           mode={mode}
           is24Hour={true}
           display="default"
+          minimumDate={new Date(2022, 1, 13)}
           onChange={onChange}
         />
-        )}
+        )} */}
       
       <Picker
-        selectedValue={selectedVehType}
+        selectedValue={vehType}
         style={{ height: 50, width: '70%' }}
         onValueChange={(itemValue, itemIndex) =>
-          setSelectedVehType(itemValue)
+          setVehType(itemValue)
         }>
         <Picker.Item label="Minibus" value="Minibus" />
         <Picker.Item label="Van" value="Van" />
@@ -273,25 +308,36 @@ const CustomerBook = ({navigation}) => {
       </Picker>
       {/* car api to generate values here: https://github.com/Savage3D/car-makes-models-data */}
       <Picker
-        selectedValue={selectedVehMake}
+        selectedValue={vehMake}
         style={{ height: 50, width: '70%' }}
         onValueChange={(itemValue, itemIndex) =>
-          setSelectedVehMake(itemValue)
+          setVehMake(itemValue)
         }>
-        <Picker.Item label="Volvo" value="minibus" />
-        <Picker.Item label="VW" value="van" />
-        <Picker.Item label="etc" value="car" />
+        <Picker.Item label="Volvo" value="Volvo" />
+        <Picker.Item label="VW" value="Volkswagen" />
+        <Picker.Item label="BMW" value="BMW" />
       </Picker>
       <Picker
-        selectedValue={selectedType}
+        selectedValue={vehModel}
         style={{ height: 50, width: '70%' }}
         onValueChange={(itemValue, itemIndex) =>
-          setSelectedType(itemValue)
+          setVehModel(itemValue)
         }>
-        <Picker.Item label="Diesel" value="diesel" />
-        <Picker.Item label="Petrol" value="petrol" />
-        <Picker.Item label="Hybrid" value="hybrid" />
-        <Picker.Item label="Electric" value="electric" />
+        <Picker.Item label="Pointer" value="Pointer" />
+        <Picker.Item label="Figo" value="Figo" />
+        <Picker.Item label="Escape" value="Escape" />
+        <Picker.Item label="Ka" value="Ka" />
+      </Picker>
+      <Picker
+        selectedValue={vehFuel}
+        style={{ height: 50, width: '70%' }}
+        onValueChange={(itemValue, itemIndex) =>
+          setVehFuel(itemValue)
+        }>
+        <Picker.Item label="Diesel" value="Diesel" />
+        <Picker.Item label="Petrol" value="Petrol" />
+        <Picker.Item label="Hybrid" value="Hybrid" />
+        <Picker.Item label="Electric" value="Electric" />
       </Picker>
       
       <Input
