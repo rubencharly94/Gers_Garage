@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState} from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View,ScrollView} from 'react-native';
+import { StyleSheet, View,ScrollView,fieldset} from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { Text,Input, Button, Overlay} from 'react-native-elements';
@@ -12,11 +12,13 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { RadioButton } from 'react-native-paper';
 import axios from "axios";
 import CalendarPicker from 'react-native-calendar-picker';
+import RadioButtonGroup, { RadioButtonItem } from "expo-radio-button";
 // import ToggleButton from '@mui/material/ToggleButton';
 // import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 
 const Stack = createNativeStackNavigator();
+const url = 'http://192.168.1.74:8080/book';
 const headerStyle = {
   justifyContent: 'center',
   headerStyle: {
@@ -71,6 +73,11 @@ export default function App() {
           component={Invoice}
           options = {headerStyle}
         />
+        <Stack.Screen
+          name="bookingsScreen"
+          component={BookingsScreen}
+          options = {headerStyle}
+        />
       </Stack.Navigator>
     </NavigationContainer>
     </SafeAreaProvider>
@@ -113,7 +120,7 @@ const Login = ({navigation}) => {
       title = "Log In"
       buttonStyle={buttonStyle}
       onPress = {() => {
-        navigation.navigate('customerBook');
+        navigation.navigate('adminManage');
       }
       }
     />
@@ -156,18 +163,21 @@ const CustomerBook = ({navigation}) => {
   const [vehType, setVehType] = useState('');
   const [vehMake, setVehMake] = useState('');
   const [vehModel, setVehModel] = useState('');
+  const [unavailableDates, setUnavailableDates] = useState([]);
+  const today = new Date();
   const usertest='4';
   useEffect(async()=>{
     let user = await getUserInfo();
     onChangeName(user.name);
     onChangePhone(user.phone);
     onChangeEmail(user.email);
+    setUnavailableDates(await getUnavailableDates(selectedService));
   },[]);
 
   const [date, setDate] = useState(new Date());
   // const [mode, setMode] = useState('date');
   // const [show, setShow] = useState(false);
-  const url = 'http://192.168.1.74:8080/book';
+  
   const config = {
     headers: {
       'Content-Type': 'application/json'
@@ -204,30 +214,22 @@ const CustomerBook = ({navigation}) => {
     } else {
       alert("Sorry, no slots available on the date selected")
     }
+    console.log(response);
   }
-
-  // const onChange = (event, selectedDate) => {
-  //   const currentDate = selectedDate || date;
-  //   setShow(Platform.OS === 'ios');
-  //   setDate(currentDate);
-  // };
-
-  // const showMode = (currentMode) => {
-  //   setShow(true);
-  //   setMode(currentMode);
-  // };
-
-  // const showDatepicker = () => {
-  //   showMode('date');
-  // };
-
-  // const showTimepicker = () => {
-  //   showMode('time');
-  // };
 
   const getUserInfo = async() => {
     var response;
     await axios.get(url+'/getpastdetails/'+usertest)
+    .then(res=>{
+      response = res.data;
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    return response;
+  }
+
+  const getUnavailableDates = async(service) => {
+    var response;
+    await axios.get(url+'/getUnavailableDates/'+service)
     .then(res=>{
       response = res.data;
     })
@@ -243,8 +245,12 @@ const CustomerBook = ({navigation}) => {
       <Picker
         selectedValue={selectedService}
         style={{ height: 50, width: '70%' , marginTop: 20}}
-        onValueChange={(itemValue, itemIndex) =>
-          setSelectedService(itemValue)
+        onValueChange={async(itemValue, itemIndex) =>{
+          setSelectedService(itemValue);
+          setUnavailableDates(await getUnavailableDates(itemValue));
+          console.log(unavailableDates);
+        }
+          
         }>
         <Picker.Item label="Annual Service" value="AnnualService" />
         <Picker.Item label="Major Service" value="MajorService" />
@@ -277,6 +283,8 @@ const CustomerBook = ({navigation}) => {
       <View>
         <CalendarPicker
           onDateChange={setDate}
+          disabledDates={unavailableDates}
+          minDate={today}
         />
         {/* <Button onPress={showDatepicker} title={"Select date:  " + date.getDate() + " / " + date.getMonth() + " / " + date.getFullYear()} /> */}
       </View>
@@ -355,7 +363,7 @@ const CustomerBook = ({navigation}) => {
       buttonStyle={buttonStyle}
       onPress = {() => {
         postBooking();
-        navigation.navigate('customerHistory');
+        navigation.navigate('customer');
       }
       }
       />
@@ -365,76 +373,115 @@ const CustomerBook = ({navigation}) => {
 }
 
 const CustomerHistory = ({navigation}) => {
+  const[bookings,getBookings] = useState([]);
+  useEffect(() => {
+    getUserBookings();
+  },[]);
+
+  const getUserBookings = async() => {
+    await axios.get(url+'/getbookings/abc')
+    .then(res=>{
+      const allBookings = res.data.map(function(booking){
+        return booking;
+      });
+      getBookings(allBookings)
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    return
+      bookings;
+    
+  }
+
   return(
-    // one per booking
+    
     <View> 
-      <Text>
-        Type: Date: etc.
-      </Text>
+      <View>
+        <View>
+          <View><Text> BOOKINGS </Text></View>
+        </View>
+        <View style={{flexDirection:'row',justifyContent: 'space-between'}}>
+          <View><Text> ID </Text></View>
+          <View><Text> Plate </Text></View>
+          <View><Text> Date </Text></View>
+          <View><Text> Status </Text></View>
+        </View>
+
+        {
+          bookings.map(
+            (booking) => (
+              <View key={booking.serviceid} style={{flexDirection:'row',justifyContent: 'space-between'}}>
+                <View><Text>{booking.serviceID}</Text></View>
+                <View><Text>{booking.carID}</Text></View>
+                <View><Text>{booking.date}</Text></View>
+                <View><Text>{booking.status}</Text></View>
+              </View>
+            )
+          )
+        }
+
+
+
+        <View>
+
+        </View>
+      </View>
     </View>
   );
   
 }
 
 const AdminManage = ({navigation}) => {
-  const [timeframe, setTimeframe] = React.useState('perday');
-  const [date, setDate] = useState(new Date(1598051730000));
-  const [mode, setMode] = useState('date');
-  const [show, setShow] = useState(false);
+  const [timeframe, setTimeframe] = useState('perDay');
+  const [date, setDate] = useState(new Date());
+  
+  
+  const [unavailableDates,setUnavailableDates] = useState([]);
 
-  const onChange = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShow(Platform.OS === 'ios');
-    setDate(currentDate);
-  };
-
-  const showMode = (currentMode) => {
-    setShow(true);
-    setMode(currentMode);
-  };
-
-  const showDatepicker = () => {
-    showMode('date');
-  };
-
-  const showTimepicker = () => {
-    showMode('time');
-  };
+  const disableWeekly = (value) => {
+    var i=0;
+    var j=0;
+    var dateTemp = (new Date())
+    dateTemp.setFullYear(2022);
+    dateTemp.setMonth(0);
+    dateTemp.setDate(2)
+    const tempDates = [];
+    if(value=='perDay'){
+      setUnavailableDates([]);
+    } else {
+      for(i=0;i<=52;i++){
+        for(j = 2; j<=7;j++){
+          tempDates.push(dateTemp.setDate(dateTemp.getDate()+1));
+        }
+        dateTemp.setDate(dateTemp.getDate()+1)
+      }
+      setUnavailableDates(tempDates);
+    }
+  }
 
   return(
-    <View> 
-      <RadioButton.Group onValueChange={newValue => setTimeframe(newValue)} value={timeframe}>
-        <View style={{flexDirection: 'row'}}>
-          <Text>Per Day</Text>
-          <RadioButton value="perday" />
-          <Text>Per Week</Text>
-          <RadioButton value="perweek" />
-        </View>
-      </RadioButton.Group>
+    <ScrollView> 
+      
+      <View>
+        <RadioButtonGroup selected={timeframe} onSelected={(value) => {setTimeframe(value);disableWeekly(value)}} radioBackground='green'>
+          <RadioButtonItem value='perDay' label='per Day'/>
+          <RadioButtonItem value='perWeek' label='per Week'/>
+        </RadioButtonGroup>
+      </View>
 
       <View>
-        <View>
-          <Button onPress={showDatepicker} title={"Select date:  " + date.getDate() + " / " + date.getMonth() + " / " + date.getFullYear()} />
-        </View>
-        {/* <View>
-          <Button onPress={showTimepicker} title={"Show time picker!"} />
-        </View> */}
-        {show && (
-          <DateTimePicker
-            testID="dateTimePicker"
-            value={date}
-            mode={mode}
-            is24Hour={true}
-            display="default"
-            onChange={onChange}
-          />
-          )}
+        <CalendarPicker
+          onDateChange={setDate}
+          disabledDates={unavailableDates}
+        />
       </View>
-      <View style={{flexDirection: 'row'}}>
-        <View><Text> ID </Text></View>
-        <View><Text> Type </Text></View>
-        <View><Text> Mechanic </Text></View>
-      </View>
+      <Button
+      title = "See/Manage Bookings"
+      buttonStyle={buttonStyle}
+      onPress = {() => {
+        navigation.navigate('bookingsScreen',{passedDate: date.toISOString().substring(0,10),timeframe: timeframe});
+      }
+      }
+      />
       <Button
       title = "Get Schedule"
       buttonStyle={buttonStyle}
@@ -443,14 +490,113 @@ const AdminManage = ({navigation}) => {
       }
       }
       />
-    </View>
+    </ScrollView>
   );
 
 }
 
-const ManageBooking = ({navigation}) => {
+const BookingsScreen = ({route, navigation}) => {
+  const date = new Date(route.params.passedDate);
+  const stringDate = date.toISOString().substring(0,10);
+  const timeframe = route.params.timeframe;
+  const[bookings,getBookings] = useState([]);
+  var tempDate2 = '';
+  var tempDate = new Date();
+  var bookingsTemp = [];
+  var bookingNum = 0;
+  useEffect(() => {
+    var i = 0;
+    if(timeframe=='perDay'){
+      getBookingsByDate(stringDate);
+      bookingsTemp = bookings;
+    } else if(timeframe=='perWeek'){
+      getBookingsByWeek(stringDate);
+    }
+  },[]);
+
+  const getBookingsByDate = async(date) => {
+    await axios.get(url+'/bookingsDay/'+date)
+    .then(res=>{
+      const allBookings = res.data.map(function(booking){
+        return booking;
+      });
+      getBookings(allBookings)
+    })
+    .catch(error => console.error(`Error: ${error}`));
+  }
+
+  const getBookingsByWeek = async(date) => {
+    await axios.get(url+'/bookingsWeek/'+date)
+    .then(res=>{
+      const allBookings = res.data.map(function(booking){
+        return booking;
+      });
+      getBookings(allBookings)
+    })
+    .catch(error => console.error(`Error: ${error}`));
+  }
+
+
+  return(
+    
+    <ScrollView> 
+      <View>
+        <View>
+          <View><Text> BOOKINGS ON DATE </Text></View>
+        </View>
+        <View style={{flexDirection:'row',justifyContent: 'space-between'}}>
+          <View><Text> ID </Text></View>
+          <View><Text> Plate </Text></View>
+          <View><Text> Date </Text></View>
+          <View><Text> Status </Text></View>
+        </View>
+
+        {
+          bookings.map(
+            (booking) => {
+              return(
+              <View key={booking.serviceid} style={{flexDirection:'row',justifyContent: 'space-between'}}>
+                <View><Text style={{color: 'blue'}}
+                            onPress={() => navigation.navigate('manageBooking',{bookingID: booking.serviceID})}>{booking.serviceID}</Text></View>
+                <View><Text>{booking.carID}</Text></View>
+                <View><Text>{booking.date}</Text></View>
+                <View><Text>{booking.status}</Text></View>
+                <View><Text>{booking.mechanicID}</Text></View>
+              </View>
+            )}
+          )
+        }
+        <View>
+
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+const ManageBooking = ({route, navigation}) => {
   const [mechanic, setMechanic] = useState('0');
   const [status, setStatus] = useState('0');
+  const [fixedCost, setFixedCost] = useState(0.0);
+  const bookingID = route.params.bookingID;
+  console.log(bookingID);
+
+  useEffect(async()=>{
+    let booking = await getBookingInfo(bookingID);
+    setMechanic(booking.mechanicID.toString());
+    setStatus(booking.status);
+  },[]);
+
+  const getBookingInfo = async(booking) => {
+    var response;
+    await axios.get(url+'/getbookingadmin/'+booking)
+    .then(res=>{
+      response = res.data;
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    return response;
+  }
+
   return(
     <View style={styles.container}>
       <Text> Mechanic: </Text>
@@ -460,15 +606,15 @@ const ManageBooking = ({navigation}) => {
         onValueChange={(itemValue, itemIndex) =>
           setMechanic(itemValue)
         }>
-        <Picker.Item label="Mechanic 1" value="m1" />
-        <Picker.Item label="Mechanic 2" value="m2" />
-        <Picker.Item label="Mechanic 3" value="m3" />
-        <Picker.Item label="Mechanic 4" value="m4" />
+        <Picker.Item label="Mechanic 1" value="1" />
+        <Picker.Item label="Mechanic 2" value="2" />
+        <Picker.Item label="Mechanic 3" value="3" />
+        <Picker.Item label="Mechanic 4" value="4" />
       </Picker>
       <Text> Fixed Cost: </Text>
       {/* possibly cost disabled with the fixed cost */}
       <Input
-      placeholder = "0"
+      placeholder = ""
       type = 'number'
       containerStyle = {inputStyle}
       // onChangeText = {onChangeCost}
@@ -488,11 +634,11 @@ const ManageBooking = ({navigation}) => {
         onValueChange={(itemValue, itemIndex) =>
           setStatus(itemValue)
         }>
-        <Picker.Item label="Booked" value="m1" />
-        <Picker.Item label="In Service" value="m2" />
-        <Picker.Item label="Fixed/Completed" value="m3" />
-        <Picker.Item label="Collected" value="m4" />
-        <Picker.Item label="Scrapped/Unrepairable" value="m5" />
+        <Picker.Item label="Booked" value="booked" />
+        <Picker.Item label="In Service" value="inservice" />
+        <Picker.Item label="Fixed/Completed" value="complete" />
+        <Picker.Item label="Collected" value="collected" />
+        <Picker.Item label="Scrapped/Unrepairable" value="scrapped" />
       </Picker>
       <Button
       title = "Generate Invoice"
