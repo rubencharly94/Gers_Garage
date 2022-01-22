@@ -11,14 +11,29 @@ import {Picker} from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { RadioButton } from 'react-native-paper';
 import axios from "axios";
-import CalendarPicker from 'react-native-calendar-picker';
+import CalendarPicker from 'react-native-calendar-picker'; //https://github.com/stephy/CalendarPicker
 import RadioButtonGroup, { RadioButtonItem } from "expo-radio-button";
 // import ToggleButton from '@mui/material/ToggleButton';
 // import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import {
+  setCustomView,
+  setCustomTextInput,
+  setCustomText,
+  setCustomImage,
+  setCustomTouchableOpacity
+} from 'react-native-global-props';
+const customTextProps = {
+  style: {
+    fontSize: 20,
+    fontFamily: 'Roboto',
+    color: 'black'
+    
+  }
+};
 
-
+setCustomText(customTextProps);
 const Stack = createNativeStackNavigator();
-const url = 'http://192.168.1.74:8080/book';
+const url = 'http://192.168.0.10:8080/book';
 const headerStyle = {
   justifyContent: 'center',
   headerStyle: {
@@ -160,20 +175,52 @@ const CustomerBook = ({navigation}) => {
   const [comments, onChangeComments] = useState('');
   const [plate, onChangePlate] = useState('');
   const [vehFuel, setVehFuel] = useState('');
-  const [vehType, setVehType] = useState('');
-  const [vehMake, setVehMake] = useState('');
+  const [vehType, setVehType] = useState('Car');
+  const [vehMake, setVehMake] = useState(1);
   const [vehModel, setVehModel] = useState('');
   const [unavailableDates, setUnavailableDates] = useState([]);
+  const [makesList,setMakesList] = useState([]);
+  const [modelsList,setModelsList] = useState([]);
+  const [isLoading,setLoading] = useState(true);
   const today = new Date();
-  const usertest='4';
+  const usertest='2';
   useEffect(async()=>{
     let user = await getUserInfo();
     onChangeName(user.name);
     onChangePhone(user.phone);
     onChangeEmail(user.email);
     setUnavailableDates(await getUnavailableDates(selectedService));
-  },[]);
+    await getMakeList();
+  },[isLoading]);
+  useEffect(()=>{
+    getModelList();
+    
+  },[vehMake]);
 
+  const getMakeList = async() => {
+    await axios.get(url+'/makeListGenerator')
+    .then(res=>{
+      const allMakes = res.data.map(function(make){
+        return make;
+      });
+      setMakesList(allMakes);
+      setLoading(false);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    
+  }
+
+  const getModelList = async() => {
+    await axios.get(url+'/modelListGenerator/'+vehMake)
+    .then(res=>{
+      const allModels = res.data.map(function(model){
+        return model;
+      });
+      setModelsList(allModels);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    
+  }
   const [date, setDate] = useState(new Date());
   // const [mode, setMode] = useState('date');
   // const [show, setShow] = useState(false);
@@ -189,7 +236,6 @@ const CustomerBook = ({navigation}) => {
   const postBooking = async() => {
     
     const stringDate = date.toISOString().substring(0,10);
-    console.log(stringDate);
     const bookingJson = {
       serviceType:selectedService,
       name:name,
@@ -197,7 +243,7 @@ const CustomerBook = ({navigation}) => {
       email:email,
       date:stringDate,
       vehType:vehType,
-      vehMake:vehMake,
+      vehMake:vehMake.toString(),
       vehModel:vehModel,
       vehFuel:vehFuel,
       plate: plate,
@@ -236,11 +282,14 @@ const CustomerBook = ({navigation}) => {
     .catch(error => console.error(`Error: ${error}`));
     return response;
   }
-
+  
+  if (isLoading) {
+    return <View><Text>Loading...</Text></View>;
+  }
   //const [selectedDate, setDate] = useState(new Date());
   return (
     
-    <ScrollView >
+    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50}}>
       <Text> Service Type: </Text>
       <Picker
         selectedValue={selectedService}
@@ -248,7 +297,6 @@ const CustomerBook = ({navigation}) => {
         onValueChange={async(itemValue, itemIndex) =>{
           setSelectedService(itemValue);
           setUnavailableDates(await getUnavailableDates(itemValue));
-          console.log(unavailableDates);
         }
           
         }>
@@ -309,9 +357,9 @@ const CustomerBook = ({navigation}) => {
         onValueChange={(itemValue, itemIndex) =>
           setVehType(itemValue)
         }>
-        <Picker.Item label="Minibus" value="Minibus" />
-        <Picker.Item label="Van" value="Van" />
         <Picker.Item label="Car" value="Car" />
+        <Picker.Item label="Van" value="Van" />
+        <Picker.Item label="Minibus" value="Minibus" />
         <Picker.Item label="Motorcycle" value="Motorcycle" />
       </Picker>
       {/* car api to generate values here: https://github.com/Savage3D/car-makes-models-data */}
@@ -321,9 +369,13 @@ const CustomerBook = ({navigation}) => {
         onValueChange={(itemValue, itemIndex) =>
           setVehMake(itemValue)
         }>
-        <Picker.Item label="Volvo" value="Volvo" />
-        <Picker.Item label="VW" value="Volkswagen" />
-        <Picker.Item label="BMW" value="BMW" />
+        {
+          makesList.map(      //Default value must be changed
+            (make) => (
+              <Picker.Item  key={make.makeId} label={make.makeName} value={make.makeId} />
+            )
+          )
+        }
       </Picker>
       <Picker
         selectedValue={vehModel}
@@ -331,10 +383,13 @@ const CustomerBook = ({navigation}) => {
         onValueChange={(itemValue, itemIndex) =>
           setVehModel(itemValue)
         }>
-        <Picker.Item label="Pointer" value="Pointer" />
-        <Picker.Item label="Figo" value="Figo" />
-        <Picker.Item label="Escape" value="Escape" />
-        <Picker.Item label="Ka" value="Ka" />
+        {
+          modelsList.map(
+            (model) => (
+              <Picker.Item  key={model.modelId} label={model.model} value={model.model} />
+            )
+          )
+        }
       </Picker>
       <Picker
         selectedValue={vehFuel}
@@ -459,7 +514,7 @@ const AdminManage = ({navigation}) => {
   }
 
   return(
-    <ScrollView> 
+    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50}}> 
       
       <View>
         <RadioButtonGroup selected={timeframe} onSelected={(value) => {setTimeframe(value);disableWeekly(value)}} radioBackground='green'>
@@ -482,14 +537,6 @@ const AdminManage = ({navigation}) => {
       }
       }
       />
-      <Button
-      title = "Get Schedule"
-      buttonStyle={buttonStyle}
-      onPress = {() => {
-        navigation.navigate('manageBooking');
-      }
-      }
-      />
     </ScrollView>
   );
 
@@ -504,6 +551,7 @@ const BookingsScreen = ({route, navigation}) => {
   var tempDate = new Date();
   var bookingsTemp = [];
   var bookingNum = 0;
+  
   useEffect(() => {
     var i = 0;
     if(timeframe=='perDay'){
@@ -536,97 +584,245 @@ const BookingsScreen = ({route, navigation}) => {
     .catch(error => console.error(`Error: ${error}`));
   }
 
-
   return(
     
-    <ScrollView> 
-      <View>
+    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50}}> 
+      
         <View>
-          <View><Text> BOOKINGS ON DATE </Text></View>
+          <View><Text> BOOKINGS</Text></View>
         </View>
         <View style={{flexDirection:'row',justifyContent: 'space-between'}}>
-          <View><Text> ID </Text></View>
-          <View><Text> Plate </Text></View>
-          <View><Text> Date </Text></View>
-          <View><Text> Status </Text></View>
+          <View><Text> ID   </Text></View>
+          <View><Text>  Plate  </Text></View>
+          <View><Text>  Status  </Text></View>
+          <View><Text>   Mechanic ID </Text></View>
         </View>
 
         {
           bookings.map(
             (booking) => {
               return(
-              <View key={booking.serviceid} style={{flexDirection:'row',justifyContent: 'space-between'}}>
+                
+              <View key={booking.serviceID} style={{flexDirection:'row',justifyContent: 'space-between'}}>
                 <View><Text style={{color: 'blue'}}
                             onPress={() => navigation.navigate('manageBooking',{bookingID: booking.serviceID})}>{booking.serviceID}</Text></View>
                 <View><Text>{booking.carID}</Text></View>
-                <View><Text>{booking.date}</Text></View>
                 <View><Text>{booking.status}</Text></View>
-                <View><Text>{booking.mechanicID}</Text></View>
+                <View><Text>      {booking.mechanicID}</Text></View>
               </View>
             )}
           )
         }
-        <View>
-
-        </View>
-      </View>
+      
     </ScrollView>
   );
 }
 
 const ManageBooking = ({route, navigation}) => {
+  const [name,setName] = useState('');
+  const [plate, setPlate] = useState('');
+  const [service,setService] = useState('');
   const [mechanic, setMechanic] = useState('0');
   const [status, setStatus] = useState('0');
   const [fixedCost, setFixedCost] = useState(0.0);
+  const [partsList,setPartsList] = useState([]);
+  const [mechanicList,setMechanicList] = useState([]);
   const bookingID = route.params.bookingID;
-  console.log(bookingID);
+  const [partsUsed,setPartsUsed] = useState([]);
+  const [vehType, setVehType] = useState('');
+  const [vehMake, setVehMake] = useState('');
+  const [vehModel, setVehModel] = useState('');
+  const [vehFuel, setVehFuel] = useState('');
+  const [partsUsedObjects,setPartsUsedObjects] = useState([]);
+  const config = {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  };
+  const postModifiedBooking = async() => {
+    const modifiedBookingJson = {
+      serviceID: bookingID,
+      mechanicID:mechanic,
+      parts:partsUsedObjects.map(part => ({serviceID:bookingID,partID:part.partID,quantity:part.quantity})),
+      status:status
+    }
+    var response = false;
+    await axios.post(url+'/saveModifiedBooking',modifiedBookingJson,config)
+    .then(res => {
+      response = res.data;
+    })
+    .catch(err => err); 
+    if(response){
+      alert("Booking Modified");
+    } else {
+      alert("Error")
+    }
+  }
 
-  useEffect(async()=>{
-    let booking = await getBookingInfo(bookingID);
-    setMechanic(booking.mechanicID.toString());
-    setStatus(booking.status);
+
+  const [part,setPartUsed] = useState(0);
+  
+
+  useEffect(()=>{
+    getBookingInfo(bookingID);
+    getPartsList();
+    getMechanicsList();
   },[]);
-
+  
+  
   const getBookingInfo = async(booking) => {
     var response;
     await axios.get(url+'/getbookingadmin/'+booking)
     .then(res=>{
       response = res.data;
+      setMechanic(response.mechanicID.toString());
+      setStatus(response.status);
+      setName(response.userID);
+      setPlate(response.carID);
+      setService(response.repairID);
+      getCarInfo(response.carID);
+      
+      getFixedCost(response.repairID);
     })
     .catch(error => console.error(`Error: ${error}`));
-    return response;
+    
+  } //parts list from api https://github.com/eladvardi/Bootstrap-Car-Parts-Catalogue/blob/master/sql_data/data.sql
+
+  const getCarInfo = async(plate) => {
+    var response;
+    await axios.get(url+'/getCarInfo/'+plate)
+    .then(res=>{
+      response = res.data;
+      setVehModel(response.model);
+      setVehMake(response.make);
+      setVehType(response.type);
+      setVehFuel(response.fuel);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+  }
+
+  const getFixedCost = async(repairT) => {
+    var response;
+    await axios.get(url+'/getFixedPrice/'+repairT)
+    .then(res=>{
+      response = res.data;
+      setFixedCost(response);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    
+  }
+
+  const getPartsList = async() => {
+    await axios.get(url+'/partListGenerator')
+    .then(res=>{
+      const allParts = res.data.map(function(part){
+        return part;
+      });
+      setPartsList(allParts);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+  }
+
+  const getMechanicsList = async() => {
+    await axios.get(url+'/mechanicListGenerator')
+    .then(res=>{
+      const allMechanics = res.data.map(function(mechanic){
+        return mechanic;
+      });
+      setMechanicList(allMechanics);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+  }
+
+  const getPartsUsed = () => {
+    const allPartsUsed = partsUsed.map(
+      function(part) {
+        var found = null;
+        partsList.forEach(d => {
+          if(part == d.partID){
+            found = d;
+          }
+        }
+        )
+        found.quantity=1;
+        return found;
+      }
+    );
+    setPartsUsedObjects(allPartsUsed);
   }
 
   return(
-    <View style={styles.container}>
-      <Text> Mechanic: </Text>
+    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50, paddingVertical:50, }}>
+      <Text> Customer: </Text>
+      <Text>        {name} </Text>
+      <Text> License Plate: </Text>
+      <Text>        {plate} </Text>
+      <Text> Service ID: </Text>
+      <Text>        {service} </Text>
+      <Text> Make: </Text>
+      <Text>        {vehMake} </Text>
+      <Text> Model: </Text>
+      <Text>         {vehModel} </Text>
+      <Text> Type: </Text>
+      <Text>         {vehType} </Text>
+      <Text> Fuel: </Text>
+      <Text>        {vehFuel} </Text>
       <Picker
         selectedValue={mechanic}
-        style={{ height: 50, width: '70%' , marginTop: 20}}
-        onValueChange={(itemValue, itemIndex) =>
-          setMechanic(itemValue)
+        style={{ height: 50, width: '70%' }}
+        onValueChange={(itemValue, itemIndex) =>{
+          setMechanic(itemValue);
+        }
         }>
-        <Picker.Item label="Mechanic 1" value="1" />
-        <Picker.Item label="Mechanic 2" value="2" />
-        <Picker.Item label="Mechanic 3" value="3" />
-        <Picker.Item label="Mechanic 4" value="4" />
+        <Picker.Item  label='Mechanic' value='0' />
+        {
+          mechanicList.map(
+            (mechanic) => (
+              <Picker.Item  key={mechanic.mechanicID} label={mechanic.name} value={mechanic.mechanicID} />
+            )
+          )
+        }
       </Picker>
       <Text> Fixed Cost: </Text>
-      {/* possibly cost disabled with the fixed cost */}
-      <Input
-      placeholder = ""
-      type = 'number'
-      containerStyle = {inputStyle}
-      // onChangeText = {onChangeCost}
-      />
-      <Button
-      title = " + Add Part/Item "
-      buttonStyle={buttonStyle}
-      // onPress = {() => {
-      //   navigation.navigate('customerHistory');
-      // }
-      // }
-      />
+      <Text>{fixedCost}</Text>
+      {
+          partsUsedObjects.map(
+            (part) => {
+            return(
+              <View style={{flexDirection:'row'}}>
+                <Text  key={part.partID}>{part.description} : € {part.cost}</Text>
+                <Button style={{backgroundColor:'red',width:'50',height:'50'}} label='Delete'/>
+                <Picker selectedValue={part.quantity} style={{ height: 50, width: '70%' }} onValueChange={(itemValue)=>{part.quantity=itemValue;
+                setPartsUsedObjects(partsUsedObjects.map(partT => partT.partID == part.partID ? {...partT, quantity:itemValue}:partT));
+                }}>
+                 <Picker.Item label='QTY' value={0}/>
+                  <Picker.Item label='1' value={1}/>
+                  <Picker.Item label='2' value={2}/>
+                  <Picker.Item label='3' value={3}/>
+                </Picker></View>
+            )
+            }
+          )
+        }
+      <Picker
+        selectedValue={0}
+        style={{ height: 50, width: '70%' }}
+        onValueChange={(itemValue, itemIndex) =>{
+          setPartUsed(itemValue);
+          partsUsed.push(itemValue);
+          getPartsUsed();
+        }
+        }>
+        <Picker.Item  label='Add Item' value='0' />
+        {
+          partsList.map(
+            (part) => (
+              <Picker.Item  key={part.partID} label={part.description} value={part.partID} />
+            )
+          )
+        }
+      </Picker>
+      
       <Text> Status: </Text>
       <Picker
         selectedValue={status}
@@ -641,25 +837,150 @@ const ManageBooking = ({route, navigation}) => {
         <Picker.Item label="Scrapped/Unrepairable" value="scrapped" />
       </Picker>
       <Button
-      title = "Generate Invoice"
+      title = "Modify Booking"
       buttonStyle={buttonStyle}
       onPress = {() => {
-        navigation.navigate('Login');
+        postModifiedBooking();
+        // navigation.navigate('Login');
       }
       }
       />
-    </View>
+      <Button
+      title = "Generate Invoice"
+      buttonStyle={buttonStyle}
+      onPress = {() => {
+        if(postModifiedBooking()){
+          navigation.navigate('invoice',{serviceID:bookingID});
+        }
+        // navigation.navigate('Login');
+      }
+      }
+      />
+    </ScrollView>
     
   )
 }
 
-const Invoice = ({navigation}) => {
+const Invoice = ({route, navigation}) => {
+  const [name,setName] = useState('');
+  const [plate, setPlate] = useState('');
+  const [service,setService] = useState('');
+  const [mechanic, setMechanic] = useState('0');
+  const [status, setStatus] = useState('0');
+  const [fixedCost, setFixedCost] = useState(0.0);
+  const bookingID = route.params.serviceID;
+  const [vehType, setVehType] = useState('');
+  const [vehMake, setVehMake] = useState('');
+  const [vehModel, setVehModel] = useState('');
+  const [vehFuel, setVehFuel] = useState('');
+  const [partsUsed, setPartsUsed] = useState([]);
+  const partsUsedInfo = [];
+
+  useEffect(async ()=>{
+    await getBookingInfo(bookingID);
+    
+  },[]);
+
+  useEffect(async()=>{
+    var response;
+    for(const part of partsUsed){
+      response = await getPartsInfo(part.partID);
+      while(response==undefined){
+
+      }
+      partsUsedInfo.push(response);
+      console.log(partsUsed);
+    }
+    
+  },[]);
+  const getBookingInfo = (booking) => {
+    var response;
+    return axios.get(url+'/getbookingadmin/'+booking)
+    .then(res=>{
+      response = res.data;
+      setMechanic(response.mechanicID);
+      setStatus(response.status);
+      setName(response.userID);
+      setPlate(response.carID);
+      setService(response.repairID);
+      getCarInfo(response.carID);
+      getFixedCost(response.repairID);
+      getPartsUsed(route.params.serviceID);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    
+  }
+  const getCarInfo = (plate) => {
+    var response;
+    return axios.get(url+'/getCarInfo/'+plate)
+    .then(res=>{
+      response = res.data;
+      setVehModel(response.model);
+      setVehMake(response.make);
+      setVehType(response.type);
+      setVehFuel(response.fuel);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+  }
+  const getPartsUsed = async(serID) => {
+    await axios.get(url+'/getPartsUsed/'+serID)
+    .then((res)=>{
+      const response = res.data.map(function(part){return part});
+      setPartsUsed(response);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+  }
+
+  const getPartsInfo = async(partID) => {
+    await axios.get(url+'/getPartsUsedInfo/'+partID)
+    .then((res)=>{
+      const response = res.data;
+      return response;
+      
+    })
+    .catch(error => console.error(`Error: ${error}`));
+  }
+  const getFixedCost = async(repairT) => {
+    var response;
+    await axios.get(url+'/getFixedPrice/'+repairT)
+    .then(res=>{
+      response = res.data;
+      setFixedCost(response);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    
+  }
   return(
-    <View>
-      <Text>
-        Report here
-      </Text>
-    </View>
+    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50}}>
+      <Text> Customer: </Text>
+      <Text> {name} </Text>
+      <Text> License Plate: </Text>
+      <Text> {plate} </Text>
+      <Text> Service ID: </Text>
+      <Text> {service} </Text>
+      <Text> Make: </Text>
+      <Text> {vehMake} </Text>
+      <Text> Model: </Text>
+      <Text> {vehModel} </Text>
+      <Text> Type: </Text>
+      <Text> {vehType} </Text>
+      <Text> Fuel: </Text>
+      <Text> {vehFuel} </Text>
+      <Text> Mechanic: </Text>
+      <Text> {mechanic} </Text>
+      <Text> Status: </Text>
+      <Text> {status} </Text>
+      <Text> Fixed Cost: </Text>
+      <Text> {fixedCost} </Text>
+      <Text> Parts Used: </Text>
+      {
+        partsUsed.map((part) => (
+          <View key={part.partID}><Text>Part ID: {part.partID} Quantity: {part.quantity}</Text>
+          </View>
+        )
+        )
+      }
+    </ScrollView>
   )
 }
 
@@ -670,4 +991,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  Text :{
+    color: 'red',
+  }
 });
