@@ -10,6 +10,7 @@ import DatePicker from "react-datepicker";
 import {Picker} from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { RadioButton } from 'react-native-paper';
+import JWT from 'expo-jwt';
 import axios from "axios";
 import CalendarPicker from 'react-native-calendar-picker'; //https://github.com/stephy/CalendarPicker
 import RadioButtonGroup, { RadioButtonItem } from "expo-radio-button";
@@ -34,6 +35,7 @@ const customTextProps = {
 setCustomText(customTextProps);
 const Stack = createNativeStackNavigator();
 const url = 'http://192.168.0.10:8080/book';
+const key = "gersgarage2022";
 const headerStyle = {
   justifyContent: 'center',
   headerStyle: {
@@ -100,8 +102,21 @@ export default function App() {
 }
 
 const Login = ({navigation}) => {
+  const [visible, setVisible] = useState(false);  //sets visibility of the Overlay to show if wrong password/user
+  const toggleOverlay = () => {
+    setVisible(!visible);
+  };
   const [username, onChangeUsername] = React.useState("undefined");
   const [password, onChangePassword] = React.useState("undefined");
+  var token = "";
+  const grantAccess = async () => { //GET request to see if user and password exist in SQL database
+    const url = 'http://192.168.0.10:8080/book/users/' + token;
+    const accessGranted = (await axios.get(`${url}`)).data;
+    
+    return(
+      accessGranted
+    )
+  }
 
   return (
     <View style={styles.container}>
@@ -131,19 +146,32 @@ const Login = ({navigation}) => {
         />
         }
       />
+      <Overlay isVisible={visible} onBackdropPress={toggleOverlay}>
+        <Text style={{color:'red'}}>Incorrect Username / Password</Text>
+      </Overlay>
       <Button
       title = "Log In"
-      buttonStyle={buttonStyle}
-      onPress = {() => {
-        navigation.navigate('adminManage');
-      }
+      onPress = {async () => {
+          token= JWT.encode({user: username, password: password},key).toString(); //generates token for the specific user
+          if((await grantAccess())==true){ //checks if the GET request was true for user password and navigates to next screen
+            if(username=='ger'){
+              navigation.navigate('adminManage');
+            } else {
+              navigation.navigate('customer',{user:username});
+            }
+          } else {
+            toggleOverlay();
+          }
+          
+        }
       }
     />
     </View>
   )
 }
 
-const Customer = ({navigation}) => {
+const Customer = ({route, navigation}) => {
+  const username=route.params.user;
 
   return (
     <View>
@@ -151,7 +179,7 @@ const Customer = ({navigation}) => {
       title = "Book Service"
       buttonStyle={buttonStyle}
       onPress = {() => {
-        navigation.navigate('customerBook');
+        navigation.navigate('customerBook',{user:username});
       }
       }
       />
@@ -159,7 +187,7 @@ const Customer = ({navigation}) => {
       title = "See Past Bookings"
       buttonStyle={buttonStyle}
       onPress = {() => {
-        navigation.navigate('customerHistory');
+        navigation.navigate('customerHistory',{user:username});
       }
       }
       />
@@ -167,7 +195,7 @@ const Customer = ({navigation}) => {
   )
 }
 
-const CustomerBook = ({navigation}) => {
+const CustomerBook = ({route, navigation}) => {
   const [selectedService, setSelectedService] = useState('AnnualService');
   const [name, onChangeName] = useState('');
   const [phone, onChangePhone] = useState('');
@@ -183,7 +211,7 @@ const CustomerBook = ({navigation}) => {
   const [modelsList,setModelsList] = useState([]);
   const [isLoading,setLoading] = useState(true);
   const today = new Date();
-  const usertest='2';
+  const usertest=route.params.user;
   useEffect(async()=>{
     let user = await getUserInfo();
     onChangeName(user.name);
@@ -418,7 +446,7 @@ const CustomerBook = ({navigation}) => {
       buttonStyle={buttonStyle}
       onPress = {() => {
         postBooking();
-        navigation.navigate('customer');
+        navigation.navigate('customer',{user:username});
       }
       }
       />
