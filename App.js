@@ -25,7 +25,7 @@ import {
 } from 'react-native-global-props';
 const customTextProps = {
   style: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: 'Roboto',
     color: 'black'
     
@@ -36,7 +36,14 @@ setCustomText(customTextProps);
 const Stack = createNativeStackNavigator();
 const url = 'http://192.168.0.10:8080/book';
 const key = "gersgarage2022";
+const tableStyle = {borderCollapse: 'collapse',
+fontSize: '1em',
+fontFamily: 'sans-serif',
+boxShadow: '0 0 20px rgba(0, 0, 0, 0.15)',
+justifyContent:'space-evenly'};
+const tableHeaderStyle = {backgroundColor:'lightgray',fontSize:'1.2em',flexDirection: "row",justifyContent:'space-evenly'};
 const headerStyle = {
+  title: "Ger's Garage",
   justifyContent: 'center',
   headerStyle: {
     backgroundColor: '#736e80',
@@ -47,8 +54,14 @@ const headerStyle = {
     fontWeight: 'bold'
   },
 }
-const buttonStyle = {backgroundColor:'#736e80' ,margin:10 };
+const buttonStyle = {backgroundColor:'#736e80' ,margin:20 };
 const inputStyle = {width:'70%',textAlign:'center'};
+const pickerStyle = {
+  backgroundColor:'lightgray',
+  height: 50,
+  width: 250,
+  marginTop: 20,
+};
 
 export default function App() {
   return (
@@ -151,6 +164,7 @@ const Login = ({navigation}) => {
       </Overlay>
       <Button
       title = "Log In"
+      buttonStyle={buttonStyle}
       onPress = {async () => {
           token= JWT.encode({user: username, password: password},key).toString(); //generates token for the specific user
           if((await grantAccess())==true){ //checks if the GET request was true for user password and navigates to next screen
@@ -174,7 +188,7 @@ const Customer = ({route, navigation}) => {
   const username=route.params.user;
 
   return (
-    <View>
+    <View><Text h2> Choose an option: </Text>
       <Button
       title = "Book Service"
       buttonStyle={buttonStyle}
@@ -278,7 +292,7 @@ const CustomerBook = ({route, navigation}) => {
       comments:comments
     }
     var response = false;
-    await axios.post(url+'/savebooking',bookingJson,config)
+    await axios.post(url+'/savebooking/'+usertest,bookingJson,config)
     .then(res => {
       response = res.data;
     })
@@ -317,11 +331,13 @@ const CustomerBook = ({route, navigation}) => {
   //const [selectedDate, setDate] = useState(new Date());
   return (
     
-    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50}}>
-      <Text> Service Type: </Text>
+    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50,paddingVertical:50}}>
+      <Text h2> Booking </Text>
+      <Text h2>--------------</Text>
+      <Text> Choose the service required: </Text>
       <Picker
         selectedValue={selectedService}
-        style={{ height: 50, width: '70%' , marginTop: 20}}
+        style={pickerStyle}
         onValueChange={async(itemValue, itemIndex) =>{
           setSelectedService(itemValue);
           setUnavailableDates(await getUnavailableDates(itemValue));
@@ -334,28 +350,30 @@ const CustomerBook = ({route, navigation}) => {
         <Picker.Item label="Major Repair" value="MajorRepair" />
       </Picker>
       {/* <DatePicker selected={selectedDate} onChange={(date) => setDate(date)} /> */}
-      
+      <Text style={{paddingTop:15}}> Name: </Text>
       <Input
-      placeholder = "Name"
-      containerStyle = {inputStyle}
+      placeholder = "Ger"
+      containerStyle = {pickerStyle}
       onChangeText = {onChangeName}
       value={name}
       />
+      <Text style={{paddingTop:15}}> Phone Number: </Text>
       <Input
-      placeholder = "Phone Number"
+      placeholder = "0830000000"
       type = 'number'
-      containerStyle = {inputStyle}
+      containerStyle = {pickerStyle}
       onChangeText = {onChangePhone}
       value={phone}
       />
+      <Text style={{paddingTop:15}}> Email: </Text>
       <Input
-      placeholder = "Email"
-      containerStyle = {inputStyle}
+      placeholder = "example@mail.com"
+      containerStyle = {pickerStyle}
       onChangeText = {onChangeEmail}
       value={email}
       />
       
-      
+      <Text style={{paddingVertical:30}}> Choose a date: </Text>
       <View>
         <CalendarPicker
           onDateChange={setDate}
@@ -378,10 +396,10 @@ const CustomerBook = ({route, navigation}) => {
           onChange={onChange}
         />
         )} */}
-      
+      <Text style={{paddingTop:15}}> Vehicle Type: </Text>
       <Picker
         selectedValue={vehType}
-        style={{ height: 50, width: '70%' }}
+        style={pickerStyle}
         onValueChange={(itemValue, itemIndex) =>
           setVehType(itemValue)
         }>
@@ -391,9 +409,10 @@ const CustomerBook = ({route, navigation}) => {
         <Picker.Item label="Motorcycle" value="Motorcycle" />
       </Picker>
       {/* car api to generate values here: https://github.com/Savage3D/car-makes-models-data */}
+      <Text style={{paddingTop:15}}> Vehicle Make: </Text>
       <Picker
         selectedValue={vehMake}
-        style={{ height: 50, width: '70%' }}
+        style={pickerStyle}
         onValueChange={(itemValue, itemIndex) =>
           setVehMake(itemValue)
         }>
@@ -405,9 +424,10 @@ const CustomerBook = ({route, navigation}) => {
           )
         }
       </Picker>
+      <Text style={{paddingTop:15}}> Vehicle Model: </Text>
       <Picker
         selectedValue={vehModel}
-        style={{ height: 50, width: '70%' }}
+        style={pickerStyle}
         onValueChange={(itemValue, itemIndex) =>
           setVehModel(itemValue)
         }>
@@ -419,9 +439,10 @@ const CustomerBook = ({route, navigation}) => {
           )
         }
       </Picker>
+      <Text style={{paddingTop:15}}> Vehicle Fuel Type: </Text>
       <Picker
         selectedValue={vehFuel}
-        style={{ height: 50, width: '70%' }}
+        style={pickerStyle}
         onValueChange={(itemValue, itemIndex) =>
           setVehFuel(itemValue)
         }>
@@ -430,15 +451,16 @@ const CustomerBook = ({route, navigation}) => {
         <Picker.Item label="Hybrid" value="Hybrid" />
         <Picker.Item label="Electric" value="Electric" />
       </Picker>
-      
+      <Text style={{paddingTop:15}}> License Plate: </Text>
       <Input
-      placeholder = "License Plate"
-      containerStyle = {inputStyle}
+      placeholder = "IR0000000"
+      containerStyle = {pickerStyle}
       onChangeText = {onChangePlate}
       />
+      <Text style={{paddingTop:15}}> Comments: </Text>
       <Input
-      placeholder = "Comments"
-      containerStyle = {inputStyle}
+      placeholder = "..."
+      containerStyle = {pickerStyle}
       onChangeText = {onChangeComments}
       />
       <Button
@@ -446,7 +468,7 @@ const CustomerBook = ({route, navigation}) => {
       buttonStyle={buttonStyle}
       onPress = {() => {
         postBooking();
-        navigation.navigate('customer',{user:username});
+        navigation.navigate('customer',{user:usertest});
       }
       }
       />
@@ -455,14 +477,16 @@ const CustomerBook = ({route, navigation}) => {
   )
 }
 
-const CustomerHistory = ({navigation}) => {
+const CustomerHistory = ({route,navigation}) => {
+  const user = route.params.user;
   const[bookings,getBookings] = useState([]);
+  var key = 0;
   useEffect(() => {
     getUserBookings();
   },[]);
 
   const getUserBookings = async() => {
-    await axios.get(url+'/getbookings/abc')
+    await axios.get(url+'/getbookings/'+user)
     .then(res=>{
       const allBookings = res.data.map(function(booking){
         return booking;
@@ -478,11 +502,11 @@ const CustomerHistory = ({navigation}) => {
   return(
     
     <View> 
-      <View>
-        <View>
+      <View style={tableStyle}>
+        <View style={tableHeaderStyle}>
           <View><Text> BOOKINGS </Text></View>
         </View>
-        <View style={{flexDirection:'row',justifyContent: 'space-between'}}>
+        <View style={tableHeaderStyle}>
           <View><Text> ID </Text></View>
           <View><Text> Plate </Text></View>
           <View><Text> Date </Text></View>
@@ -491,22 +515,20 @@ const CustomerHistory = ({navigation}) => {
 
         {
           bookings.map(
-            (booking) => (
-              <View key={booking.serviceid} style={{flexDirection:'row',justifyContent: 'space-between'}}>
+            (booking) => {
+              key+=1;
+              return (
+              <View key={booking.key} style={{flexDirection:'row',justifyContent: 'space-between'}}>
                 <View><Text>{booking.serviceID}</Text></View>
                 <View><Text>{booking.carID}</Text></View>
                 <View><Text>{booking.date}</Text></View>
                 <View><Text>{booking.status}</Text></View>
               </View>
-            )
+            )}
           )
         }
 
 
-
-        <View>
-
-        </View>
       </View>
     </View>
   );
@@ -542,7 +564,7 @@ const AdminManage = ({navigation}) => {
   }
 
   return(
-    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50}}> 
+    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50,paddingVertical:50}}> 
       
       <View>
         <RadioButtonGroup selected={timeframe} onSelected={(value) => {setTimeframe(value);disableWeekly(value)}} radioBackground='green'>
@@ -614,16 +636,16 @@ const BookingsScreen = ({route, navigation}) => {
 
   return(
     
-    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50}}> 
+    <ScrollView contentContainerStyle={tableStyle}> 
       
-        <View>
-          <View><Text> BOOKINGS</Text></View>
+        <View style={tableHeaderStyle}>
+          <View><Text> BOOKINGS {stringDate}</Text></View>
         </View>
-        <View style={{flexDirection:'row',justifyContent: 'space-between'}}>
-          <View><Text> ID   </Text></View>
-          <View><Text>  Plate  </Text></View>
-          <View><Text>  Status  </Text></View>
-          <View><Text>   Mechanic ID </Text></View>
+        <View style={tableHeaderStyle}>
+          <View><Text>    ID</Text></View>
+          <View><Text>   Plate</Text></View>
+          <View><Text>   Status</Text></View>
+          <View><Text>MechanicID</Text></View>
         </View>
 
         {
@@ -631,7 +653,7 @@ const BookingsScreen = ({route, navigation}) => {
             (booking) => {
               return(
                 
-              <View key={booking.serviceID} style={{flexDirection:'row',justifyContent: 'space-between'}}>
+              <View key={booking.serviceID} style={{flexDirection:'row',justifyContent: 'space-evenly'}}>
                 <View><Text style={{color: 'blue'}}
                             onPress={() => navigation.navigate('manageBooking',{bookingID: booking.serviceID})}>{booking.serviceID}</Text></View>
                 <View><Text>{booking.carID}</Text></View>
@@ -667,6 +689,7 @@ const ManageBooking = ({route, navigation}) => {
       'Content-Type': 'application/json'
     }
   };
+  var keyPart = 0;
   const postModifiedBooking = async() => {
     const modifiedBookingJson = {
       serviceID: bookingID,
@@ -716,13 +739,24 @@ const ManageBooking = ({route, navigation}) => {
     
   } //parts list from api https://github.com/eladvardi/Bootstrap-Car-Parts-Catalogue/blob/master/sql_data/data.sql
 
+  const getMake = async(makeid) => {
+    await axios.get(url+'/getMake/'+makeid)
+    .then(res=>{
+      setVehMake(res.data);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    
+  }
+
+
   const getCarInfo = async(plate) => {
     var response;
     await axios.get(url+'/getCarInfo/'+plate)
     .then(res=>{
+      var resMake = "";
       response = res.data;
+      getMake(response.make);
       setVehModel(response.model);
-      setVehMake(response.make);
       setVehType(response.type);
       setVehFuel(response.fuel);
     })
@@ -780,24 +814,24 @@ const ManageBooking = ({route, navigation}) => {
   }
 
   return(
-    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50, paddingVertical:50, }}>
-      <Text> Customer: </Text>
-      <Text>        {name} </Text>
-      <Text> License Plate: </Text>
-      <Text>        {plate} </Text>
-      <Text> Service ID: </Text>
-      <Text>        {service} </Text>
-      <Text> Make: </Text>
-      <Text>        {vehMake} </Text>
-      <Text> Model: </Text>
-      <Text>         {vehModel} </Text>
-      <Text> Type: </Text>
-      <Text>         {vehType} </Text>
-      <Text> Fuel: </Text>
-      <Text>        {vehFuel} </Text>
+    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50, paddingVertical:50 }}>
+      <Text style={{paddingTop:20}}> Customer: </Text>
+      <Text h4> {name} </Text>
+      <Text style={{paddingTop:20}}> License Plate: </Text>
+      <Text h4> {plate} </Text>
+      <Text style={{paddingTop:20}}> Service ID: </Text>
+      <Text h4> {service} </Text>
+      <Text style={{paddingTop:20}}> Make: </Text>
+      <Text h4> {vehMake} </Text>
+      <Text style={{paddingTop:20}}> Model: </Text>
+      <Text h4> {vehModel} </Text>
+      <Text style={{paddingTop:20}}> Type: </Text>
+      <Text h4> {vehType} </Text>
+      <Text style={{paddingTop:20}}> Fuel: </Text>
+      <Text h4> {vehFuel} </Text>
       <Picker
         selectedValue={mechanic}
-        style={{ height: 50, width: '70%' }}
+        style={pickerStyle}
         onValueChange={(itemValue, itemIndex) =>{
           setMechanic(itemValue);
         }
@@ -811,22 +845,25 @@ const ManageBooking = ({route, navigation}) => {
           )
         }
       </Picker>
-      <Text> Fixed Cost: </Text>
-      <Text>{fixedCost}</Text>
+      <Text style={{paddingTop:20}}> Fixed Cost: </Text>
+      <Text h4> {fixedCost}</Text>
+      <Text style={{paddingTop:20}}> Parts/Items: </Text>
       {
           partsUsedObjects.map(
             (part) => {
+              part.keyPart = keyPart;
+              keyPart +=1;
             return(
-              <View style={{flexDirection:'row'}}>
-                <Text  key={part.partID}>{part.description} : € {part.cost}</Text>
-                <Button style={{backgroundColor:'red',width:'50',height:'50'}} label='Delete'/>
-                <Picker selectedValue={part.quantity} style={{ height: 50, width: '70%' }} onValueChange={(itemValue)=>{part.quantity=itemValue;
+              <View style={{backgroundColor:'lightgray'}}>
+                <Text style={{margin:20,marginBottom:0}} key={part.keyPart}>{part.description} :€ {part.cost}</Text>
+                <Picker selectedValue={part.quantity} style={{width:100,height:45,backgroundColor:'gray',margin:15}} onValueChange={(itemValue)=>{part.quantity=itemValue;
                 setPartsUsedObjects(partsUsedObjects.map(partT => partT.partID == part.partID ? {...partT, quantity:itemValue}:partT));
                 }}>
                  <Picker.Item label='QTY' value={0}/>
                   <Picker.Item label='1' value={1}/>
                   <Picker.Item label='2' value={2}/>
                   <Picker.Item label='3' value={3}/>
+                  <Picker.Item label='4' value={4}/>
                 </Picker></View>
             )
             }
@@ -834,27 +871,32 @@ const ManageBooking = ({route, navigation}) => {
         }
       <Picker
         selectedValue={0}
-        style={{ height: 50, width: '70%' }}
+        style={pickerStyle}
         onValueChange={(itemValue, itemIndex) =>{
-          setPartUsed(itemValue);
-          partsUsed.push(itemValue);
+          //setPartUsed(itemValue);
+          if(partsUsed.includes(itemValue)){
+
+          } else {
+            partsUsed.push(itemValue);
+          }
           getPartsUsed();
         }
         }>
-        <Picker.Item  label='Add Item' value='0' />
+        <Picker.Item  label=' + Add Item/Part' value='0' />
         {
           partsList.map(
-            (part) => (
+            (part) => {
+              return(
               <Picker.Item  key={part.partID} label={part.description} value={part.partID} />
-            )
+            )}
           )
         }
       </Picker>
       
-      <Text> Status: </Text>
+      <Text style={{paddingTop:20}}> Status: </Text>
       <Picker
         selectedValue={status}
-        style={{ height: 50, width: '70%'}}
+        style={pickerStyle}
         onValueChange={(itemValue, itemIndex) =>
           setStatus(itemValue)
         }>
@@ -878,7 +920,7 @@ const ManageBooking = ({route, navigation}) => {
       buttonStyle={buttonStyle}
       onPress = {() => {
         if(postModifiedBooking()){
-          navigation.navigate('invoice',{serviceID:bookingID});
+          navigation.navigate('invoice',{serviceID:bookingID,parts:partsUsedObjects});
         }
         // navigation.navigate('Login');
       }
@@ -902,7 +944,27 @@ const Invoice = ({route, navigation}) => {
   const [vehModel, setVehModel] = useState('');
   const [vehFuel, setVehFuel] = useState('');
   const [partsUsed, setPartsUsed] = useState([]);
-  const partsUsedInfo = [];
+  const partsUsedInfo = route.params.parts;
+  var cost = fixedCost;
+  const [cost2,setCost] = useState(0.0);
+
+  const getMake = async(makeid) => {
+    await axios.get(url+'/getMake/'+makeid)
+    .then(res=>{
+      setVehMake(res.data);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    
+  }
+
+  const getModel = async(modelid) => {
+    await axios.get(url+'/getModel/'+modelid)
+    .then(res=>{
+      setVehModel(res.data);
+    })
+    .catch(error => console.error(`Error: ${error}`));
+    
+  }
 
   useEffect(async ()=>{
     await getBookingInfo(bookingID);
@@ -910,17 +972,9 @@ const Invoice = ({route, navigation}) => {
   },[]);
 
   useEffect(async()=>{
-    var response;
-    for(const part of partsUsed){
-      response = await getPartsInfo(part.partID);
-      while(response==undefined){
-
-      }
-      partsUsedInfo.push(response);
-      console.log(partsUsed);
-    }
+    setCost(cost);
     
-  },[]);
+  },[cost]);
   const getBookingInfo = (booking) => {
     var response;
     return axios.get(url+'/getbookingadmin/'+booking)
@@ -933,7 +987,7 @@ const Invoice = ({route, navigation}) => {
       setService(response.repairID);
       getCarInfo(response.carID);
       getFixedCost(response.repairID);
-      getPartsUsed(route.params.serviceID);
+      //getPartsUsed(route.params.serviceID);
     })
     .catch(error => console.error(`Error: ${error}`));
     
@@ -943,31 +997,14 @@ const Invoice = ({route, navigation}) => {
     return axios.get(url+'/getCarInfo/'+plate)
     .then(res=>{
       response = res.data;
-      setVehModel(response.model);
-      setVehMake(response.make);
+      getMake(response.make);
+      getModel(response.model);
       setVehType(response.type);
       setVehFuel(response.fuel);
     })
     .catch(error => console.error(`Error: ${error}`));
   }
-  const getPartsUsed = async(serID) => {
-    await axios.get(url+'/getPartsUsed/'+serID)
-    .then((res)=>{
-      const response = res.data.map(function(part){return part});
-      setPartsUsed(response);
-    })
-    .catch(error => console.error(`Error: ${error}`));
-  }
-
-  const getPartsInfo = async(partID) => {
-    await axios.get(url+'/getPartsUsedInfo/'+partID)
-    .then((res)=>{
-      const response = res.data;
-      return response;
-      
-    })
-    .catch(error => console.error(`Error: ${error}`));
-  }
+ 
   const getFixedCost = async(repairT) => {
     var response;
     await axios.get(url+'/getFixedPrice/'+repairT)
@@ -979,35 +1016,42 @@ const Invoice = ({route, navigation}) => {
     
   }
   return(
-    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50}}>
-      <Text> Customer: </Text>
-      <Text> {name} </Text>
-      <Text> License Plate: </Text>
-      <Text> {plate} </Text>
-      <Text> Service ID: </Text>
-      <Text> {service} </Text>
-      <Text> Make: </Text>
-      <Text> {vehMake} </Text>
-      <Text> Model: </Text>
-      <Text> {vehModel} </Text>
-      <Text> Type: </Text>
-      <Text> {vehType} </Text>
-      <Text> Fuel: </Text>
-      <Text> {vehFuel} </Text>
-      <Text> Mechanic: </Text>
-      <Text> {mechanic} </Text>
-      <Text> Status: </Text>
-      <Text> {status} </Text>
-      <Text> Fixed Cost: </Text>
-      <Text> {fixedCost} </Text>
-      <Text> Parts Used: </Text>
+    <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal:50,paddingVertical:50}}>
+      <Text style={{paddingTop:20}}> Customer: </Text>
+      <Text h4> {name} </Text>
+      <Text style={{paddingTop:20}}> License Plate: </Text>
+      <Text h4> {plate} </Text>
+      <Text style={{paddingTop:20}}> Service ID: </Text>
+      <Text h4> {service} </Text>
+      <Text style={{paddingTop:20}}> Make: </Text>
+      <Text h4> {vehMake} </Text>
+      <Text style={{paddingTop:20}}> Model: </Text>
+      <Text h4> {vehModel} </Text>
+      <Text style={{paddingTop:20}}> Type: </Text>
+      <Text h4> {vehType} </Text>
+      <Text style={{paddingTop:20}}> Fuel: </Text>
+      <Text h4> {vehFuel} </Text>
+      <Text style={{paddingTop:20}}> Mechanic: </Text>
+      <Text h4> {mechanic} </Text>
+      <Text style={{paddingTop:20}}> Status: </Text>
+      <Text h4> {status} </Text>
+      <Text style={{paddingTop:20}}> Fixed Cost: </Text>
+      <Text h4> €{fixedCost} </Text>
+      
+      <Text style={{paddingTop:20}}> Parts Used: </Text>
       {
-        partsUsed.map((part) => (
-          <View key={part.partID}><Text>Part ID: {part.partID} Quantity: {part.quantity}</Text>
+        partsUsedInfo.map((part) => {
+          cost+=(part.cost*part.quantity);
+          console.log(cost);
+          return (
+          <View key={part.keyPart}><Text h4> {part.description} {'\n'} Qty: {part.quantity} €{part.cost}/each</Text>
           </View>
-        )
+          )}
+          
         )
       }
+      <Text style={{paddingTop:20}}> Total: </Text>
+      <Text h4> €{cost2} </Text>
     </ScrollView>
   )
 }
@@ -1019,7 +1063,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  Text :{
-    color: 'red',
-  }
 });
