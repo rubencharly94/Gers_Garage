@@ -1,28 +1,16 @@
 import React, { useEffect, useState} from 'react';
-import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View,ScrollView,fieldset} from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { Text,Input, Button, Overlay} from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import DatePicker from "react-datepicker";
 import {Picker} from '@react-native-picker/picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { RadioButton } from 'react-native-paper';
 import JWT from 'expo-jwt';
 import axios from "axios";
-import CalendarPicker from 'react-native-calendar-picker'; //https://github.com/stephy/CalendarPicker
+import CalendarPicker from 'react-native-calendar-picker'; // obtained from https://github.com/stephy/CalendarPicker
 import RadioButtonGroup, { RadioButtonItem } from "expo-radio-button";
-// import ToggleButton from '@mui/material/ToggleButton';
-// import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import {
-  setCustomView,
-  setCustomTextInput,
-  setCustomText,
-  setCustomImage,
-  setCustomTouchableOpacity
-} from 'react-native-global-props';
+import {setCustomText} from 'react-native-global-props';
 const customTextProps = {
   style: {
     fontSize: 18,
@@ -114,7 +102,7 @@ export default function App() {
   );
 }
 
-const Login = ({navigation}) => {
+const Login = ({navigation}) => { //Screen where the user logs in with user and password
   const [visible, setVisible] = useState(false);  //sets visibility of the Overlay to show if wrong password/user
   const toggleOverlay = () => {
     setVisible(!visible);
@@ -184,7 +172,7 @@ const Login = ({navigation}) => {
   )
 }
 
-const Customer = ({route, navigation}) => {
+const Customer = ({route, navigation}) => { //Customer's screen with 2 buttons to either book a service or see past bookings
   const username=route.params.user;
 
   return (
@@ -209,7 +197,7 @@ const Customer = ({route, navigation}) => {
   )
 }
 
-const CustomerBook = ({route, navigation}) => {
+const CustomerBook = ({route, navigation}) => { //Customer's screen where they can book the service, filling all the related information and choosing a date
   const [selectedService, setSelectedService] = useState('AnnualService');
   const [name, onChangeName] = useState('');
   const [phone, onChangePhone] = useState('');
@@ -238,7 +226,7 @@ const CustomerBook = ({route, navigation}) => {
     getModelList();
     
   },[vehMake]);
-
+  //get methods to get all the information related to the booking
   const getMakeList = async() => {
     await axios.get(url+'/makeListGenerator')
     .then(res=>{
@@ -274,7 +262,7 @@ const CustomerBook = ({route, navigation}) => {
   };
   const minDate = new Date();//calendar dates
 
-  
+  //post method to post the info of the booking
   const postBooking = async() => {
     
     const stringDate = date.toISOString().substring(0,10);
@@ -477,7 +465,7 @@ const CustomerBook = ({route, navigation}) => {
   )
 }
 
-const CustomerHistory = ({route,navigation}) => {
+const CustomerHistory = ({route,navigation}) => {  //Customer's screen with a list of all their past bookings
   const user = route.params.user;
   const[bookings,getBookings] = useState([]);
   var key = 0;
@@ -535,7 +523,7 @@ const CustomerHistory = ({route,navigation}) => {
   
 }
 
-const AdminManage = ({navigation}) => {
+const AdminManage = ({navigation}) => { //Administrator's initial screen where they can choose to see a list of bookings per day or week, as well as choose the date
   const [timeframe, setTimeframe] = useState('perDay');
   const [date, setDate] = useState(new Date());
   
@@ -592,7 +580,7 @@ const AdminManage = ({navigation}) => {
 
 }
 
-const BookingsScreen = ({route, navigation}) => {
+const BookingsScreen = ({route, navigation}) => { //Administrator's screen where they see a list of the bookings on the date/week selected
   const date = new Date(route.params.passedDate);
   const stringDate = date.toISOString().substring(0,10);
   const timeframe = route.params.timeframe;
@@ -611,7 +599,7 @@ const BookingsScreen = ({route, navigation}) => {
       getBookingsByWeek(stringDate);
     }
   },[]);
-
+  //get methods to get all the information related to the booking
   const getBookingsByDate = async(date) => {
     await axios.get(url+'/bookingsDay/'+date)
     .then(res=>{
@@ -668,7 +656,7 @@ const BookingsScreen = ({route, navigation}) => {
   );
 }
 
-const ManageBooking = ({route, navigation}) => {
+const ManageBooking = ({route, navigation}) => {  //Administrator's screen, after choosing an specific booking in the list they get to this screen where they can modify it
   const [name,setName] = useState('');
   const [plate, setPlate] = useState('');
   const [service,setService] = useState('');
@@ -690,6 +678,7 @@ const ManageBooking = ({route, navigation}) => {
     }
   };
   var keyPart = 0;
+  //post method to send to the server the modified info of a booking
   const postModifiedBooking = async() => {
     const modifiedBookingJson = {
       serviceID: bookingID,
@@ -720,7 +709,7 @@ const ManageBooking = ({route, navigation}) => {
     getMechanicsList();
   },[]);
   
-  
+  //get methods to get all the info related to the booking
   const getBookingInfo = async(booking) => {
     var response;
     await axios.get(url+'/getbookingadmin/'+booking)
@@ -931,7 +920,7 @@ const ManageBooking = ({route, navigation}) => {
   )
 }
 
-const Invoice = ({route, navigation}) => {
+const Invoice = ({route, navigation}) => { //Administrator's screen with all the information generated for the invoice of a booking
   const [name,setName] = useState('');
   const [plate, setPlate] = useState('');
   const [service,setService] = useState('');
@@ -947,7 +936,7 @@ const Invoice = ({route, navigation}) => {
   const partsUsedInfo = route.params.parts;
   var cost = fixedCost;
   const [cost2,setCost] = useState(0.0);
-
+  //get methods to get all the information related to the booking
   const getMake = async(makeid) => {
     await axios.get(url+'/getMake/'+makeid)
     .then(res=>{
